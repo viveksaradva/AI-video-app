@@ -1,6 +1,7 @@
 import os
 import requests
 import json
+import psycopg2
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,6 +11,13 @@ GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_API_KEY = os.getenv(
     "GROQ_API_KEY"
 )  
+
+# Database connection setup
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 # ——— SCRIPT GENERATOR ———
 def generate_ad_script(prompt: str) -> list:
@@ -79,9 +87,40 @@ Client’s campaign idea: "{prompt}"
 
     return script
 
+# ——— DATABASE INSERTION ———
+def store_script_in_db(campaign_idea: str, script: list):
+    """
+    Stores the generated script into the PostgreSQL database.
+    """
+    try:
+        # Connect to the PostgreSQL database
+        connection = psycopg2.connect(
+            dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT
+        )
+        cursor = connection.cursor()
+
+        # Insert the script into the ad_scripts table
+        insert_query = """
+        INSERT INTO scripts (user_prompt, script)
+        VALUES (%s, %s)
+        """
+        cursor.execute(insert_query, (campaign_idea, json.dumps(script)))
+        connection.commit()
+        print("Script inserted successfully!")
+
+    except Exception as error:
+        print(f"Error while inserting script: {error}")
+    finally:
+        # Close the database connection
+        if connection:
+            cursor.close()
+            connection.close()
+
 
 # ——— USAGE ———
 if __name__ == "__main__":
     user_prompt = input("Enter your campaign idea: ")
     ad_script = generate_ad_script(user_prompt)
     print(json.dumps(ad_script, indent=2))
+
+    store_script_in_db(user_prompt, ad_script)
