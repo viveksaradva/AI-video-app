@@ -12,3 +12,5 @@ wheels/
 .env
 response.json
 test.py
+outputs
+*.mp3

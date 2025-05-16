@@ -12,9 +12,9 @@ def get_ad_script_prompt(user_prompt: str) -> str:
     
     user_prompt_template = f"""
 You are a world-class creative ad scriptwriter with a talent for storytelling, visual poetry, and bold branding. 
-Your task is to help a client transform their campaign idea into a **unique and imaginative** 15-second(or whatever length the client wants) video script.
+Your task is to help a client transform their campaign idea into a **unique and imaginative** 30-second(or whatever length the client wants) video script.
 
-This video should stand out — use bold visuals, a compelling story arc (even if it's just 2–3 scenes), and integrate the brand **organically** into the narrative, not as a hard sell. 
+This video should stand out — use bold visuals, a compelling story arc (even if it's just 4-5 scenes), and integrate the brand **organically** into the narrative, not as a hard sell. 
 Think cinematic, emotional, funny, surreal, or metaphorical — whatever brings the brand to life in a **fresh and memorable** way.
 
 For each scene, in addition to the usual fields, **provide an array of the top most prioritized search‑focused keywords** that best capture the visual concept (short, noun‑based, 1–2 words each) so we can use them directly to query stock video APIs. Avoid including uncommon or abstract terms like 'montage', 'cinematic', 'emotion', or 'aesthetic' — use words likely to appear as tags in stock video libraries like locations, actions, objects, people, or nature terms.”

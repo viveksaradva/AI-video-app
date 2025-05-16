@@ -14,8 +14,9 @@ dependencies = [
     "pydantic>=2.0.0",
     "sentence-transformers>=4.1.0",
     "ipdb>=0.13.13",
-    "spacy>=3.8.5",
-    "yake>=0.4.8",
     "keybert>=0.9.0",
-    "pytextrank>=3.3.0",
+    "ffmpeg-python>=0.2.0",
+    "pyht>=0.1.14",
+    "elevenlabs>=1.59.0",
+    "websocket-client>=1.8.0",
 ]
