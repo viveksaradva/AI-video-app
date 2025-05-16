@@ -1,5 +1,4 @@
 import os
-# import ipdb
 import json
 import requests
 from typing import List, Dict
@@ -11,65 +10,47 @@ from sentence_transformers import SentenceTransformer, util
 load_dotenv()
 
 class VideoFinderAgent:
-    """
-    Agent to find the best matching video clip for each scene using provided search queries
-    from the LLM-generated script, selecting the highest-resolution clip.
-    """
+    
     def __init__(self, api_key: str, per_page: int = 10):
         self.api_key = api_key
         self.per_page = per_page
-        self.search_url = "https://pixabay.com/api/videos/"
+        self.base_url = "https://pixabay.com/api/videos/"
         self.embed_model = SentenceTransformer('all-mpnet-base-v2')
-
-    def extract_query(self, search_query: str) -> str:
-        """
-        Receives a pre-defined search_query from the script and returns it.
-        """
-        return search_query[:100]
 
     def search_videos(self, query: str) -> List[Dict]:
         # Only key and q parameters for broad matching
-        encoded_query = quote_plus(query)
-        url = f"{self.search_url}?key={self.api_key}&q={encoded_query}"
+        url = f"{self.base_url}?key={self.api_key}&q={quote_plus(query)}"
         resp = requests.get(url)
         resp.raise_for_status()
         return resp.json().get('hits', [])
+
+    def rank_candidates(self, description: str, videos: List[Dict]) -> Dict:
+        scene_emb = self.embed_model.encode(description, convert_to_tensor=True)
+        best_candidate = max(
+            (video for video in videos if video.get('tags')),
+            key=lambda v: util.cos_sim(
+                scene_emb,
+                self.embed_model.encode(v['tags'], convert_to_tensor=True)
+            ).item(),
+            default=videos[0]
+        )
+        return best_candidate
 
     def get_best_file(self, video: Dict) -> Dict:
         """
         Select the highest resolution file from the video entry.
         """
-        files = video.get('videos', {})
         return max(
-            files.values(),
+            video.get('videos', {}).values(),
             key=lambda f: f.get('width', 0) * f.get('height', 0),
             default={}
         )
     
-    def rank_candidates(self, description: str, videos: List[Dict]) -> Dict:
-        scene_emb = self.embed_model.encode(description, convert_to_tensor=True)
-        best_score, best_video = -1.0, None
-        for video in videos:
-            tags = video.get('tags', '')
-            if not tags:
-                continue
-            tag_emb = self.embed_model.encode(tags, convert_to_tensor=True)
-            score = util.cos_sim(scene_emb, tag_emb).item()
-            if score > best_score:
-                best_score, best_video = score, video
-        return best_video or videos[0]
-
-
     def find_best_clip(self, scene: Dict) -> Dict:
         """
         Use scene-provided 'search_query' to fetch and pick the best clip.
         """
-        query = self.extract_query(scene.get('search_query', ''))
-        # candidates = self.search_videos(query)
-        # if not candidates:
-        #     return {'error': 'no_videos_found', 'query': query}
-
-        # best_video = candidates[0]
+        query = scene.get('search_query', '') 
         candidates = self.search_videos(query)
         if not candidates:
             return {'error': 'no_videos_found', 'query': query}
@@ -79,7 +60,6 @@ class VideoFinderAgent:
             scene.get('visual_description', ''),
             candidates
         )
-
         best_file = self.get_best_file(best_video)
 
         return {
