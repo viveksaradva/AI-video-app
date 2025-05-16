@@ -3,7 +3,6 @@ import requests
 import json
 from dotenv import load_dotenv
 from utils.prompt import get_ad_script_prompt
-from utils.db_config import store_script_in_db
 
 load_dotenv()
 
@@ -35,7 +34,8 @@ def generate_ad_script(prompt: str) -> list:
         "Content-Type": "application/json",
     }
     payload = {
-        "model": "llama-3.3-70b-versatile",
+        # "model": "llama-3.3-70b-versatile",
+        "model": "mistral-saba-24b",
         "messages": [
             {"role": "system", "content": prompts["system_prompt"]},
             {"role": "user", "content": prompts["user_prompt"]},
@@ -58,11 +58,3 @@ def generate_ad_script(prompt: str) -> list:
         script = json.loads(content[start:end])
 
     return script
-
-# ——— USAGE ———
-if __name__ == "__main__":
-    user_prompt = input("Enter your campaign idea: ")
-    ad_script = generate_ad_script(user_prompt)
-    print(json.dumps(ad_script, indent=2))
-
-    store_script_in_db(user_prompt, ad_script)
