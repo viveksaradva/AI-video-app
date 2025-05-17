@@ -19,4 +19,8 @@ dependencies = [
     "pyht>=0.1.14",
     "elevenlabs>=1.59.0",
     "websocket-client>=1.8.0",
+    "langchain>=0.3.25",
+    "langgraph>=0.4.5",
+    "langchain-groq>=0.3.2",
+    "langchain-core>=0.3.60",
 ]

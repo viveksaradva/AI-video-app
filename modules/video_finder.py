@@ -1,9 +1,11 @@
 import os
 import requests
+import re
 from typing import List, Dict, Any, Optional
 import argparse
 from dotenv import load_dotenv
 from groq import Groq
+from utils.prompt import get_video_finder_prompts
 
 class PixabayVideoFinder:
     """
@@ -40,18 +42,9 @@ class PixabayVideoFinder:
         Returns:
             List of search terms to try
         """
-        # Construct the prompt for the LLM
-        prompt = f"""
-        I need to find ONE perfect video clip that precisely matches this scene description:
-
-        "{scene_description}"
-
-        Generate 3 highly specific search queries I should use to find this exact video on Pixabay.
-        Focus on the most distinctive visual elements, actions, and settings that would be present.
-        Be precise and concrete rather than abstract or conceptual.
-
-        List only the search terms, each on a new line, without numbering or additional explanations.
-        """
+        # Get the prompt from the utils module
+        prompts = get_video_finder_prompts(scene_description)
+        prompt = prompts["search_terms_prompt"]
 
         try:
             # Use Groq's LLaMA-3 model for efficient keyword generation
@@ -122,19 +115,9 @@ class PixabayVideoFinder:
 
         video_info_text = "\n".join(video_info)
 
-        prompt = f"""
-        I need to find THE SINGLE BEST video clip that perfectly matches this scene description:
-
-        "{scene_description}"
-
-        Here are potential video options from Pixabay:
-
-        {video_info_text}
-
-        Analyze each video's tags and attributes carefully. Consider how well each video would visually represent the scene.
-
-        Return ONLY the number of the single best video (e.g., "3"). Do not return multiple numbers or any other text.
-        """
+        # Get the prompt from the utils module
+        prompts = get_video_finder_prompts(scene_description, video_info_text)
+        prompt = prompts["rank_videos_prompt"]
 
         try:
             # Use Mixtral for better reasoning capabilities when selecting the best video
@@ -149,7 +132,6 @@ class PixabayVideoFinder:
             # Parse selection
             try:
                 # Extract just the digits from the response
-                import re
                 digits = re.findall(r'\d+', selection_text)
                 if digits:
                     selected_idx = int(digits[0]) - 1
